@@ -1,0 +1,10 @@
+TODO
+
+// Set up the Github/get Derek running
+// Figure out what's happening with missing image files?
+// Figure out why COLMAP is detecting multiple camera IDs.
+// InstantNGP output vs colmap output?
+    - https://github.com/NVlabs/instant-ngp/blob/master/scripts/colmap2nerf.py
+// Camera calibration???
+    - https://fpcv.cs.columbia.edu/
+// What does OpenCV mean?
