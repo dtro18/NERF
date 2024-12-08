@@ -1,0 +1,9 @@
+Do this before working to have the most updated copy
+
+git pull
+
+After you want to upload your changes:
+
+git add .
+git commit -m "COMMIT_MESSAGE"
+git push origin master
