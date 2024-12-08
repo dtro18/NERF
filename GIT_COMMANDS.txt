@@ -7,3 +7,5 @@ After you want to upload your changes:
 git add .
 git commit -m "COMMIT_MESSAGE"
 git push origin master
+
+some random changes
