@@ -1,5 +1,5 @@
 import numpy as np
-
+import math
 import os
 
 def parse_images_and_cameras(images_file, cameras_file):
@@ -35,25 +35,56 @@ def parse_images_and_cameras(images_file, cameras_file):
             pose = build_pose(qw, qx, qy, qz, tx, ty, tz)
             width, height, params = camera_data[camera_id]
             focal_length = params[0]
-            z_near, z_far = 0.1, 100.0
+            z_near, z_far = np.array([0]), np.array([105.0])
             # Append additional parameters
-            pose_with_extras = np.concatenate([pose.flatten(), [width, height, focal_length, z_near, z_far]])
-            poses.append(pose_with_extras)
+            intrinsics = np.array([[height, width, focal_length]]).T
+            pose_with_extras = np.concatenate((pose, intrinsics), axis=1).flatten()
+            print(pose_with_extras)
+            pose_with_extras = np.concatenate((pose_with_extras, z_near, z_far))
+            print(pose_with_extras)
     return np.array(poses)
 
+# Assuming they come out normalized...
+def normalize_quarternion(qw, qx, qy, qz):
+    mag = math.sqrt(qw**2 + qx**2 + qy**2 + qz**2)
+    return qw / mag, qx / mag, qy / mag, qz / mag
+
+def transpose_rotation_matrix(R):
+    return R.transpose()
 # Convert quaternion into 3x3 rotation matrix
 def quaternion_to_rotation_matrix(qw, qx, qy, qz):
-    return np.array([
+    R = np.array([
         [1 - 2*qy**2 - 2*qz**2, 2*qx*qy - 2*qz*qw, 2*qx*qz + 2*qy*qw],
         [2*qx*qy + 2*qz*qw, 1 - 2*qx**2 - 2*qz**2, 2*qy*qz - 2*qx*qw],
         [2*qx*qz - 2*qy*qw, 2*qy*qz + 2*qx*qw, 1 - 2*qx**2 - 2*qy**2]
     ])
-# Add the translation vector as the last column to generate the 3x4 matrix
+    return R
+
+def update_translation_vector(Rt, T):
+    return -np.dot(Rt, T)
+
+def colmap_coords_to_endonerf_coords(v):
+    # Assuming vector is an np array has shape 3 x n
+    p = np.array([[0, -1, 0], [1, 0, 0], [0, 0, -1]])
+    return np.dot(p, v)
+# Uncomment later
+
+# Generate the 3x4 camera-to-world matrix
 def build_pose(qw, qx, qy, qz, tx, ty, tz):
     R = quaternion_to_rotation_matrix(qw, qx, qy, qz)
+    R = transpose_rotation_matrix(R)
+
     T = np.array([[tx, ty, tz]]).T
+    T = update_translation_vector(R, T)
+
+    R = colmap_coords_to_endonerf_coords(R)
+    T = colmap_coords_to_endonerf_coords(T)
     return np.hstack((R, T))
 
 # Example usage
-poses = parse_images_and_cameras("D:\\COLMAP\\Colmap Project\\sparse\\0\\images.txt", "D:\\COLMAP\\Colmap Project\\sparse\\0\\cameras.txt")
-np.save("poses_with_extras.npy", poses)
+poses = parse_images_and_cameras("D:\\COLMAP\\Colmap Project Fixed Camera No Tree\\sparse\\images.txt", "D:\\COLMAP\\Colmap Project Fixed Camera No Tree\\sparse\\cameras.txt")
+# np.save("poses_with_extras.npy", poses)
+
+
+# q0, q1, q2, q3 = 0.851773, 0.0165051, 0.503764, -0.142941
+# rotation_matrix = quaternion_to_rotation_matrix(q0, q1, q2, q3)
