@@ -4,6 +4,7 @@ import os
 
 def parse_images_and_cameras(images_file, cameras_file):
     poses = []
+    poses_sorted = []
     # Parse cameras.txt
     camera_data = {}
     with open(cameras_file, "r") as f:
@@ -27,7 +28,7 @@ def parse_images_and_cameras(images_file, cameras_file):
             qw, qx, qy, qz = map(float, parts[1:5])
             tx, ty, tz = map(float, parts[5:8])
             camera_id = int(parts[8])
-
+            image_name = parts[9]
             if camera_id not in camera_data:
                 print(f"Camera ID {camera_id} from images.txt is not found in cameras.txt.")
                 continue
@@ -41,8 +42,15 @@ def parse_images_and_cameras(images_file, cameras_file):
             pose_with_extras = np.concatenate((pose, intrinsics), axis=1).flatten()
             print(pose_with_extras)
             pose_with_extras = np.concatenate((pose_with_extras, z_near, z_far))
-            print(pose_with_extras)
-    return np.array(poses)
+            poses.append((image_name, pose_with_extras))
+    poses.sort()
+    for name, array in poses:
+        poses_sorted.append(array)
+    # print(poses)
+    # print(np.array(poses_sorted))
+    return np.array(poses_sorted)
+
+    # return np.array(poses)
 
 # Assuming they come out normalized...
 def normalize_quarternion(qw, qx, qy, qz):
@@ -67,7 +75,6 @@ def colmap_coords_to_endonerf_coords(v):
     # Assuming vector is an np array has shape 3 x n
     p = np.array([[0, -1, 0], [1, 0, 0], [0, 0, -1]])
     return np.dot(p, v)
-# Uncomment later
 
 # Generate the 3x4 camera-to-world matrix
 def build_pose(qw, qx, qy, qz, tx, ty, tz):
@@ -81,10 +88,11 @@ def build_pose(qw, qx, qy, qz, tx, ty, tz):
     T = colmap_coords_to_endonerf_coords(T)
     return np.hstack((R, T))
 
-# Example usage
-poses = parse_images_and_cameras("D:\\COLMAP\\Colmap Project Fixed Camera No Tree\\sparse\\images.txt", "D:\\COLMAP\\Colmap Project Fixed Camera No Tree\\sparse\\cameras.txt")
-# np.save("poses_with_extras.npy", poses)
+# Example usage: Specify image and camera file paths.
+poses = parse_images_and_cameras("D:\\NERF\\Colmap Project\\sparse\\0\\images.txt", "D:\\NERF\\Colmap Project\\sparse\\0\\cameras.txt")
+np.save("poses_with_extras.npy", poses)
 
+# print(poses.shape)
 
 # q0, q1, q2, q3 = 0.851773, 0.0165051, 0.503764, -0.142941
 # rotation_matrix = quaternion_to_rotation_matrix(q0, q1, q2, q3)
